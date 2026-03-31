@@ -6,7 +6,6 @@ Usage:
         --config configs/default.yaml \
         --config-id 8B_128K \
         --data-dir ./data/milan/ \
-        --target-cell 2 \
         --max-iterations 3 \
         --output-dir ./results/
 """
@@ -25,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.algorithm.trafficllm import TrafficLLM
 from src.data.loader import load_daily_files, get_available_cell_ids
-from src.data.preprocessor import preprocess_cell
+from src.data.preprocessor import preprocess_base_station
 from src.data.splitter import train_test_split, select_source_example
 from src.llm.client import LLMClient
 from src.prompts.builder import build_pexam
@@ -40,7 +39,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--config-id", required=True)
     parser.add_argument("--data-dir")
-    parser.add_argument("--target-cell", type=int)
     parser.add_argument("--max-iterations", type=int)
     parser.add_argument("--output-dir", default="./results/")
     parser.add_argument("--force-restart", action="store_true")
@@ -111,7 +109,8 @@ def main() -> None:
     exp_cfg = find_experiment_config(cfg["experiments"], args.config_id)
 
     data_dir = args.data_dir or cfg["dataset"]["data_dir"]
-    target_cell_id = args.target_cell or cfg["dataset"].get("target_cell_id")
+    target_cells = cfg["dataset"]["target_cells"]
+    spatial_method = cfg["dataset"].get("spatial_method", "sum")
     max_iterations = args.max_iterations or cfg["algorithm"]["max_refinement_iterations"]
     log_dir = args.log_dir or cfg["logging"]["log_dir"]
 
@@ -120,6 +119,8 @@ def main() -> None:
 
     print(f"Starting experiment: config_id={args.config_id}, model={model_id}, context={context_window}")
     print(f"Data dir: {data_dir}")
+    print(f"Base station cells ({len(target_cells)}): {target_cells}")
+    print(f"Spatial aggregation method: {spatial_method}")
 
     ensure_dir(args.output_dir)
 
@@ -141,14 +142,12 @@ def main() -> None:
     available_cells = get_available_cell_ids(raw_df)
     print(f"Available cells: {len(available_cells)} total")
 
-    if target_cell_id is None:
-        target_cell_id = random.choice(available_cells)
-        print(f"Randomly selected target_cell_id={target_cell_id}")
-    source_cell_id = target_cell_id
-
-    print(f"Preprocessing target cell {target_cell_id}...")
-    tgt_x, tgt_y, tgt_in_dates, tgt_tgt_dates = preprocess_cell(
-        raw_df, target_cell_id, cfg["dataset"]["prediction_target"]
+    print(f"Preprocessing base station ({len(target_cells)} cells)...")
+    tgt_x, tgt_y, tgt_in_dates, tgt_tgt_dates = preprocess_base_station(
+        raw_df,
+        cell_ids=target_cells,
+        target_column=cfg["dataset"]["prediction_target"],
+        spatial_method=spatial_method,
     )
 
     train_data, test_data = train_test_split(
@@ -245,8 +244,8 @@ def main() -> None:
         "config_id": args.config_id,
         "model_id": model_id,
         "context_window": context_window,
-        "source_cell_id": source_cell_id,
-        "target_cell_id": target_cell_id,
+        "target_cells": target_cells,
+        "spatial_method": spatial_method,
         "num_train_samples": len(x_train),
         "num_test_samples": len(x_test),
         "training_phase": {

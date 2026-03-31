@@ -1,6 +1,8 @@
 dataset:
   data_dir: "./data/milan/"          # Path to folder containing all daily .txt files
-  target_cell_id: 1                  # Cell ID for prediction (pexam also comes from this cell)
+  # Base station = group of cells spatially aggregated into one signal
+  target_cells: [5, 6, 7, 8, 105, 106, 107, 108, 205, 206, 207, 208, 305, 306, 307, 308]
+  spatial_method: "max"              # How to combine cells: 'sum', 'max', or 'mean'
   train_ratio: 0.7                   # 70% for refinement, 30% for test
   prediction_target: "internet"      # Column to predict
 
