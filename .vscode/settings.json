@@ -1,0 +1,16 @@
+{
+  "files.watcherExclude": {
+    "**/data/**": true,
+    "**/results/**": true,
+    "**/logs/**": true,
+    "**/__pycache__/**": true
+  },
+  "files.exclude": {
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    "**/data/**": true,
+    "**/results/**": true,
+    "**/logs/**": true
+  }
+}

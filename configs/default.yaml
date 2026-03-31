@@ -1,0 +1,41 @@
+dataset:
+  data_dir: "./data/milan/"          # Path to folder containing all daily .txt files
+  target_cell_id: 1                  # Cell ID for prediction (pexam also comes from this cell)
+  train_ratio: 0.7                   # 70% for refinement, 30% for test
+  prediction_target: "internet"      # Column to predict
+
+algorithm:
+  max_refinement_iterations: 3       # Max outer loop iterations
+  convergence_threshold: 3       # |MAE_new - MAE_old| < this → stop
+  max_validation_iterations: 3       # Validation sub-loop for feedback math
+  max_parse_retries: 2               # Retries if LLM output can't be parsed
+  temperature: 0.0                   # Deterministic outputs for reproducibility
+
+vllm:
+  base_url: "http://localhost:8000/v1"
+  api_key: "not-needed"             # vLLM doesn't require real key
+
+experiments:
+  - config_id: "8B_128K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 131072
+  - config_id: "8B_64K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 65536
+  - config_id: "8B_4K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 4096
+  - config_id: "1B_128K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 131072
+  - config_id: "1B_64K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 65536
+  - config_id: "1B_4K"
+    model_id: "/workspace/models/llama-3.1-8b"
+    context_window: 4096
+
+logging:
+  level: "INFO"
+  log_dir: "./logs/"
+  save_all_prompts: true             # Save every prompt/response for debugging
